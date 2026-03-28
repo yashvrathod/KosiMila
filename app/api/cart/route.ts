@@ -13,80 +13,71 @@ export async function GET(request: NextRequest) {
         product: {
           include: { category: true },
         },
+        variant: true,
       },
     });
 
     const total = cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) => {
+        const price = item.variant ? item.variant.price : item.product.price;
+        return sum + price * item.quantity;
+      },
       0
     );
 
     return NextResponse.json({ cartItems, total });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch cart" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch cart" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request);
-    const { productId, quantity = 1 } = await request.json();
+    const { productId, variantId, quantity = 1 } = await request.json();
 
-    const existingItem = await prisma.cartItem.findUnique({
-      where: { userId_productId: { userId, productId } },
+    const existingItem = await prisma.cartItem.findFirst({
+      where: { userId, productId, variantId: variantId || null },
     });
 
     if (existingItem) {
       const cartItem = await prisma.cartItem.update({
         where: { id: existingItem.id },
         data: { quantity: existingItem.quantity + quantity },
-        include: { product: true },
+        include: { product: true, variant: true },
       });
       return NextResponse.json({ cartItem });
     }
 
     const cartItem = await prisma.cartItem.create({
-      data: { userId, productId, quantity },
-      include: { product: true },
+      data: { userId, productId, variantId: variantId || null, quantity },
+      include: { product: true, variant: true },
     });
 
     return NextResponse.json({ cartItem }, { status: 201 });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes("Not authenticated") ||
-        error.message.includes("Invalid token") ||
-        error.message.includes("Forbidden"))
-    ) {
+    // ... auth error check ...
+    if (error instanceof Error && (error.message.includes("Not authenticated") || error.message.includes("Invalid token") || error.message.includes("Forbidden"))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.json(
-      { error: "Failed to add to cart" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to add to cart" }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const userId = await getUserId(request);
-    const { productId, quantity } = await request.json();
+    const { id, quantity } = await request.json();
 
     const cartItem = await prisma.cartItem.update({
-      where: { userId_productId: { userId, productId } },
+      where: { id, userId },
       data: { quantity },
-      include: { product: true },
+      include: { product: true, variant: true },
     });
 
     return NextResponse.json({ cartItem });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update cart" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update cart" }, { status: 500 });
   }
 }
 
@@ -94,24 +85,18 @@ export async function DELETE(request: NextRequest) {
   try {
     const userId = await getUserId(request);
     const { searchParams } = new URL(request.url);
-    const productId = searchParams.get("productId");
+    const id = searchParams.get("id");
 
-    if (!productId) {
-      return NextResponse.json(
-        { error: "Product ID required" },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: "Item ID required" }, { status: 400 });
     }
 
     await prisma.cartItem.delete({
-      where: { userId_productId: { userId, productId } },
+      where: { id, userId },
     });
 
     return NextResponse.json({ message: "Item removed from cart" });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to remove item" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to remove item" }, { status: 500 });
   }
 }

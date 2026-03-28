@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,15 +17,26 @@ export async function GET(request: NextRequest) {
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { brand: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
         ],
       },
-      select: { id: true, name: true, slug: true },
+      select: { 
+        id: true, 
+        name: true, 
+        slug: true, 
+        price: true, 
+        images: true,
+        category: {
+          select: { name: true }
+        }
+      },
       take: limit,
       orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ suggestions: products });
-  } catch {
+  } catch (error) {
+    console.error("Search suggestions failed", error);
     return NextResponse.json({ error: "Failed to fetch suggestions" }, { status: 500 });
   }
 }

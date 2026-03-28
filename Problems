@@ -1,0 +1,30 @@
+ The current implementation is solid and covers the core features of a premium e-commerce store. However, to truly elevate the "Kosimila" brand to a luxury status without spending any money on external
+  services, here is what I suggest:
+
+  1. What's "Not Good" or Missing Currently:
+   * The Shop Page: While the home and product pages are premium, the main "Products" listing page usually looks a bit basic in these templates. It needs to match the new rounded, airy, and high-contrast UI of
+     the product detail page.
+   * User Profile & Order History: Users should have a premium-looking dashboard where they can track their orders and manage addresses easily.
+   * Inventory Visibility: We added variants, but if a variant is "Out of Stock," the UI should clearly disable it instead of letting the user add it to the cart.
+
+  2. Free Feature Suggestions:
+
+  A. Smart Shipping Calculator (Free)
+  Since your client sells by weight (500g, 1kg, 3kg), we can add logic that tells the user in the cart: "Add 500g more to get FREE shipping!" or "You are eligible for Free Delivery!" based on their total weight.
+  This encourages users to buy more.
+
+  B. "Recipe & Pairing" Section (Free)
+  Makhana is a health food. Adding a simple, admin-managed "Recipes" section where the client can post things like "Roasted Peri Peri Makhana Bowl" or "Makhana Kheer" adds massive value and SEO without any cost.
+
+  C. Recently Viewed Products (Free)
+  We can use the browser's localStorage to show a "Recently Viewed" section at the bottom of product pages. This is a standard premium feature that increases conversion.
+
+  D. Sticky "Quick Buy" Bar (Free)
+  On mobile, when a user scrolls down past the "Add to Cart" button on the product page, a small bar can appear at the bottom with the price and an "Add to Cart" button. This makes it very easy for them to buy
+  while they are reading reviews.
+
+  E. WhatsApp "Inquiry" for Bulk Orders (Free)
+  Since bulk pricing is a feature, we can add a "Buy in Bulk / Wholesale Inquiry" button that opens WhatsApp with a pre-filled message: "Hi, I want to order 10kg+ of [Product Name]. Please share wholesale
+  rates."
+
+  ---

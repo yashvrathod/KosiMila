@@ -19,9 +19,13 @@ export async function GET() {
     const publicSettings = {
       siteName: settings.siteName,
       siteDescription: settings.siteDescription ?? null,
+      logo: settings.logo ?? null,
+      heroImage: settings.heroImage ?? null,
+      contactEmail: settings.contactEmail ?? null,
       contactPhone: settings.contactPhone ?? null,
       currency: settings.currency,
       taxRate: settings.taxRate,
+      paymentQrCode: settings.paymentQrCode ?? null,
       // Expect paymentMethods like { upi: { vpa: string, name?: string } }
       paymentMethods: settings.paymentMethods ?? null,
     } as const;

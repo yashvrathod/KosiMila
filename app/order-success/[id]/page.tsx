@@ -30,15 +30,23 @@ export default function OrderSuccessPage() {
   const params = useParams();
   const id = Array.isArray((params as any).id) ? (params as any).id[0] : (params as any).id as string;
   const [order, setOrder] = useState<any | null>(null);
+  const [settings, setSettings] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/orders/${id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed to load order");
-        setOrder(data.order);
+        const [oRes, sRes] = await Promise.all([
+          fetch(`/api/orders/${id}`),
+          fetch("/api/settings"),
+        ]);
+        
+        const oData = await oRes.json();
+        const sData = await sRes.json();
+        
+        if (!oRes.ok) throw new Error(oData?.error || "Failed to load order");
+        setOrder(oData.order);
+        setSettings(sData.settings);
       } catch (e: any) {
         setError(e?.message || "Something went wrong");
       }
@@ -49,9 +57,9 @@ export default function OrderSuccessPage() {
   const upi = useMemo<{ url: string; vpa: string; qrImage: string }>(() => {
     if (!order) return { url: "", vpa: "", qrImage: "/images/qrimage.png" };
 
-    const vpa = "bhaktipataskar10@okaxis"; // TODO: move to settings/env
-    const name = "Bhakti Pataskar"; // optional display name
-    const qrImage = "/images/qrimage.png"; // ensure file exists under public/images
+    const vpa = settings?.paymentMethods?.upi?.vpa || "bhaktipataskar10@okaxis"; 
+    const name = settings?.paymentMethods?.upi?.name || "Bhakti Pataskar";
+    const qrImage = settings?.paymentQrCode || "/images/qrimage.png";
 
     const url = buildUpiUrl({
       vpa,
@@ -62,11 +70,12 @@ export default function OrderSuccessPage() {
     });
 
     return { url, vpa, qrImage };
-  }, [order]);
+  }, [order, settings]);
 
   const whatsappLink = useMemo<string>(() => {
     if (!order) return "";
     const customer = order.shippingAddress;
+    const adminPhone = settings?.contactPhone || "916202058021";
 
     const lines = [
       "Payment Confirmation",
@@ -91,8 +100,8 @@ export default function OrderSuccessPage() {
       "Payment Mode: GPay (UPI)",
     ];
  const text = encodeURIComponent(lines.join("\n"));
-     return `https://wa.me/916202058021?text=${text}`;
-  }, [order]);
+     return `https://wa.me/${adminPhone}?text=${text}`;
+  }, [order, settings]);
 
   if (error) {
     return (

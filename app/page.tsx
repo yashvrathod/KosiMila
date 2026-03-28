@@ -5,7 +5,7 @@ import Link from "next/link";
 import StoreHeader from "./components/store/StoreHeader";
 import StoreFooter from "./components/store/StoreFooter";
 import { FaHome, FaShieldAlt, FaGift, FaTruck } from "react-icons/fa";
-import { Dumbbell, Wheat, Feather, Heart, Flame, Leaf, ShieldCheck, CheckCircle, Mail, MessageCircle, Star, Sparkles } from "lucide-react";
+import { Dumbbell, Wheat, Feather, Heart, Flame, Leaf, ShieldCheck, CheckCircle, Mail, MessageCircle, Star, Sparkles, ArrowRight } from "lucide-react";
 import ContactPage from "./contact/page";
 import CustomerReview from "./components/store/custorerreview";
 
@@ -44,6 +44,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [settings, setSettings] = useState<any>(null);
   const [adding, setAdding] = useState<Record<string, boolean>>({});
   const [cartMsg, setCartMsg] = useState<Record<string, string | null>>({});
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
@@ -91,21 +92,24 @@ export default function HomePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [pRes, cRes, bRes, wRes] = await Promise.all([
+        const [pRes, cRes, bRes, wRes, sRes] = await Promise.all([
           fetch("/api/products?limit=100"),
           fetch("/api/categories"),
           fetch("/api/banners"),
           fetch("/api/wishlist"),
+          fetch("/api/settings"),
         ]);
 
         const p = await pRes.json();
         const c = await cRes.json();
         const b = await bRes.json();
         const w = await wRes.json().catch(() => ({ items: [] }));
+        const s = await sRes.json();
 
         setProducts(p.products || []);
         setCategories(c.categories || []);
         setBanners(b.banners || []);
+        setSettings(s.settings);
         setWishlist(new Set((w.items || []).map((item: any) => item.productId)));
       } catch (error) {
         console.error("Failed to load home data", error);
@@ -224,7 +228,7 @@ export default function HomePage() {
             <div className="relative animate-slide-up">
               <div className="relative rounded-5xl overflow-hidden shadow-premium">
                 <img
-                  src="/banner.webp"
+                  src={settings?.heroImage || "/banner.webp"}
                   alt="Premium Makhana"
                   className="w-full h-[400px] lg:h-[500px] object-cover"
                 />
@@ -246,69 +250,91 @@ export default function HomePage() {
       {/* ================= CATEGORIES ================= */}
       <section className="py-20 bg-neutral-50">
         <div className="container-premium">
-          <div className="text-center mb-16">
-            <h2 className="font-poppins text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-              Explore Our Premium Range
+          <div className="text-center mb-16 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-100 rounded-full blur-3xl opacity-50 -z-10"></div>
+            <h2 className="font-poppins text-4xl md:text-5xl font-bold text-neutral-900 mb-4 tracking-tight">
+              Explore Our <span className="text-gradient">Premium Range</span>
             </h2>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Discover our carefully curated selection of premium makhana varieties
+            <div className="w-24 h-1.5 bg-gradient-to-r from-primary-400 to-primary-600 mx-auto rounded-full mb-6"></div>
+            <p className="text-lg text-neutral-600 max-w-2xl mx-auto font-medium">
+              Discover our carefully curated selection of premium makhana varieties, handcrafted for your wellness journey.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {(categories.length > 0 ? categories : [
               {
-                href: "/products?category=roasted-makhana",
+                slug: "roasted-makhana",
                 image: "/images/roasted.png",
-                title: "Roasted Makhana",
-                desc: "Light & crunchy everyday perfection",
-                color: "from-amber-400 to-orange-500"
+                name: "Roasted Makhana",
+                description: "Light & crunchy everyday perfection",
               },
               {
-                href: "/products?category=flavored-makhana",
+                slug: "flavored-makhana",
                 image: "/images/flavored.png",
-                title: "Flavored Makhana",
-                desc: "Bold & exciting taste profiles",
-                color: "from-pink-400 to-rose-500"
+                name: "Flavored Makhana",
+                description: "Bold & exciting taste profiles",
               },
               {
-                href: "/products?category=combo-packs",
+                slug: "combo-packs",
                 image: "/images/combo.png",
-                title: "Combo Packs",
-                desc: "Perfect variety for daily snacking",
-                color: "from-blue-400 to-indigo-500"
+                name: "Combo Packs",
+                description: "Perfect variety for daily snacking",
               },
               {
-                href: "/products?category=gifting",
+                slug: "gifting",
                 image: "/images/gifting.png",
-                title: "Gifting Packs",
-                desc: "Premium gift boxes for special moments",
-                color: "from-purple-400 to-pink-500"
+                name: "Gifting Packs",
+                description: "Premium gift boxes for special moments",
               },
-            ].map((category, index) => (
-              <Link
-                key={index}
-                href={category.href}
-                className="group relative overflow-hidden rounded-3xl bg-white shadow-soft hover:shadow-premium transition-all duration-500 card-hover"
-              >
-                <div className={`h-2 bg-gradient-to-r ${category.color}`}></div>
-                <div className="p-6">
-                  <div className="h-32 flex items-center justify-center mb-6">
+            ]).map((category: any, index: number) => {
+              const gradients = [
+                "from-amber-200 to-orange-100",
+                "from-rose-200 to-pink-100",
+                "from-blue-200 to-indigo-100",
+                "from-emerald-200 to-teal-100"
+              ];
+              const borderColors = [
+                "group-hover:border-amber-400",
+                "group-hover:border-rose-400",
+                "group-hover:border-blue-400",
+                "group-hover:border-emerald-400"
+              ];
+              const bgGradient = gradients[index % gradients.length];
+              const borderColor = borderColors[index % borderColors.length];
+              
+              return (
+                <Link
+                  key={category.id || index}
+                  href={`/products?category=${category.slug}`}
+                  className={`group relative flex flex-col items-center text-center p-8 rounded-[2.5rem] bg-white border-2 border-transparent transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${borderColor}`}
+                >
+                  <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br ${bgGradient} rounded-[2.5rem] transition-opacity duration-500 -z-10`}></div>
+                  
+                  <div className="relative mb-8 w-full aspect-square flex items-center justify-center">
+                    {/* Background decoration */}
+                    <div className={`absolute inset-4 rounded-full bg-gradient-to-br ${bgGradient} opacity-40 blur-2xl group-hover:scale-125 transition-transform duration-700`}></div>
+                    
                     <img
-                      src={category.image}
-                      alt={category.title}
-                      className="h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                      src={category.image || "/images/roasted.png"}
+                      alt={category.name}
+                      className="relative z-10 w-4/5 h-4/5 object-contain drop-shadow-2xl group-hover:scale-110 group-hover:-rotate-6 transition-all duration-700"
                     />
                   </div>
-                  <h3 className="font-poppins text-lg font-semibold text-neutral-900 mb-2">
-                    {category.title}
+
+                  <h3 className="font-poppins text-xl font-bold text-neutral-900 mb-3">
+                    {category.name}
                   </h3>
-                  <p className="text-sm text-neutral-600">
-                    {category.desc}
+                  <p className="text-sm text-neutral-500 leading-relaxed mb-6 px-2">
+                    {category.description || "Explore our selection of premium snacks."}
                   </p>
-                </div>
-              </Link>
-            ))}
+                  
+                  <div className="mt-auto inline-flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 text-neutral-900 group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

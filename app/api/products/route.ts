@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
           category: {
             select: { name: true, slug: true },
           },
+          variants: true,
         },
         orderBy,
         skip: (page - 1) * limit,
@@ -113,14 +114,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { variants, ...rest } = data;
     const product = await prisma.product.create({
       data: {
-        ...data,
+        ...rest,
         name: data.name.trim(),
         slug,
         highlights: data.highlights || [],
         images: data.images || [],
+        variants: variants ? {
+          create: variants.map((v: any) => ({
+            weight: v.weight,
+            price: parseFloat(v.price),
+            comparePrice: v.comparePrice ? parseFloat(v.comparePrice) : undefined,
+            stock: parseInt(v.stock || "0"),
+          })),
+        } : undefined,
       },
+      include: {
+        variants: true,
+      }
     });
 
     return NextResponse.json({ product }, { status: 201 });

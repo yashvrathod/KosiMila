@@ -17,6 +17,14 @@ type ProductListItem = {
   createdAt: string;
 };
 
+type ProductVariant = {
+  id?: string;
+  weight: string;
+  price: number;
+  comparePrice?: number | null;
+  stock: number;
+};
+
 type ProductDetail = {
   id: string;
   name: string;
@@ -28,6 +36,7 @@ type ProductDetail = {
   brand: string | null;
   highlights: string[];
   active: boolean;
+  variants: ProductVariant[];
 };
 
 type ProductFormState = {
@@ -40,6 +49,7 @@ type ProductFormState = {
   highlights: string;
   images: string[];
   active: boolean;
+  variants: ProductVariant[];
 };
 
 // -------------------- Utils --------------------
@@ -54,6 +64,7 @@ function toFormState(p?: ProductDetail | null): ProductFormState {
     highlights: (p?.highlights ?? []).join("\n"),
     images: p?.images ?? [],
     active: p?.active ?? true,
+    variants: p?.variants ?? [],
   };
 }
 
@@ -286,6 +297,7 @@ function ProductForm({ categories, initial, productId, onDone }: { categories: C
         highlights: form.highlights.split("\n").map((s) => s.trim()).filter(Boolean),
         images: form.images.filter((url) => url.trim()),
         active: form.active,
+        variants: form.variants,
       };
       const url = productId ? `/api/products/${productId}` : "/api/products";
       const method = productId ? "PUT" : "POST";
@@ -301,7 +313,7 @@ function ProductForm({ categories, initial, productId, onDone }: { categories: C
   };
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="space-y-4">
+    <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -353,6 +365,79 @@ function ProductForm({ categories, initial, productId, onDone }: { categories: C
         />
       </div>
       
+      <div className="border-t pt-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-bold text-gray-700">Product Variants (Sizes/Weights)</label>
+          <Button 
+            type="button"
+            variant="secondary" 
+            onClick={() => setForm({ ...form, variants: [...form.variants, { weight: "", price: 0, stock: 0 }] })}
+          >
+            Add Variant
+          </Button>
+        </div>
+        
+        <div className="space-y-3">
+          {form.variants.map((v, i) => (
+            <div key={i} className="flex gap-2 items-end bg-gray-50 p-3 rounded-lg border">
+              <div className="flex-1">
+                <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Weight/Size</label>
+                <input 
+                  placeholder="e.g. 1kg" 
+                  className="w-full px-2 py-1 text-sm border rounded" 
+                  value={v.weight} 
+                  onChange={(e) => {
+                    const newVariants = [...form.variants];
+                    newVariants[i].weight = e.target.value;
+                    setForm({ ...form, variants: newVariants });
+                  }} 
+                />
+              </div>
+              <div className="w-24">
+                <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Price</label>
+                <input 
+                  type="number" 
+                  className="w-full px-2 py-1 text-sm border rounded" 
+                  value={v.price} 
+                  onChange={(e) => {
+                    const newVariants = [...form.variants];
+                    newVariants[i].price = Number(e.target.value);
+                    setForm({ ...form, variants: newVariants });
+                  }} 
+                />
+              </div>
+              <div className="w-24">
+                <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Compare</label>
+                <input 
+                  type="number" 
+                  className="w-full px-2 py-1 text-sm border rounded" 
+                  value={v.comparePrice ?? ""} 
+                  onChange={(e) => {
+                    const newVariants = [...form.variants];
+                    newVariants[i].comparePrice = e.target.value ? Number(e.target.value) : undefined;
+                    setForm({ ...form, variants: newVariants });
+                  }} 
+                />
+              </div>
+              <Button 
+                type="button"
+                variant="danger" 
+                className="p-1 px-2"
+                onClick={() => {
+                  const newVariants = form.variants.filter((_, idx) => idx !== i);
+                  setForm({ ...form, variants: newVariants });
+                }}
+              >
+                <Trash2 size={14} />
+              </Button>
+            </div>
+          ))}
+          {form.variants.length === 0 && (
+            <p className="text-xs text-gray-500 italic">No variants added. Base price will be used.</p>
+          )}
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Highlights (one per line)</label>
         <textarea className="w-full px-3 py-2 border rounded min-h-28" value={form.highlights} onChange={(e) => setForm({ ...form, highlights: e.target.value })} />

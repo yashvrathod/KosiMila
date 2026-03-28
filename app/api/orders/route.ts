@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
 
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
-      include: { product: true },
+      include: { 
+        product: true,
+        variant: true,
+      },
     });
 
     if (cartItems.length === 0) {
@@ -43,7 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     const subtotal = cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) => {
+        const price = item.variant ? item.variant.price : item.product.price;
+        return sum + price * item.quantity;
+      },
       0
     );
 
@@ -73,7 +79,9 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         orderNumber,
-        status: "PENDING", // Changed from CONFIRMED to PENDING
+        status: "PENDING",
+        paymentStatus: "PENDING",
+        paymentVerified: false,
         subtotal,
         discount,
         couponCode,
@@ -85,20 +93,24 @@ export async function POST(request: NextRequest) {
         items: {
           create: cartItems.map((item) => ({
             productId: item.productId,
+            variantId: item.variantId,
             quantity: item.quantity,
-            price: item.product.price,
+            price: item.variant ? item.variant.price : item.product.price,
           })),
         },
       },
-      include: { 
+      include: {
         items: {
-          include: { product: true }
+          include: { 
+            product: true,
+            variant: true,
+          }
         }
       },
     });
 
-    // Clear cart after order
-    await prisma.cartItem.deleteMany({ where: { userId } });
+    // NOTE: Cart is NOT cleared here. It will be cleared when admin verifies payment.
+    // This prevents data loss if payment fails or user abandons the order.
 
     // Send order confirmation notifications
     await sendOrderConfirmation(order);
@@ -115,11 +127,12 @@ export async function POST(request: NextRequest) {
 async function sendOrderConfirmation(order: any) {
   try {
     // WhatsApp notification
+    const fullAddress = `${order.shippingAddress.addressLine1}${order.shippingAddress.addressLine2 ? ', ' + order.shippingAddress.addressLine2 : ''}`;
     const whatsappMessage = `🎉 Order Confirmed! 🌿\n\n` +
       `Thank you for choosing Kosimila!\n\n` +
       `📦 Order: ${order.orderNumber}\n` +
       `💰 Total: ₹${order.total}\n` +
-      `📍 Delivery: ${order.shippingAddress.address}, ${order.shippingAddress.city}\n\n` +
+      `📍 Delivery: ${fullAddress}, ${order.shippingAddress.city}\n\n` +
       `Track your order: ${process.env.NEXT_PUBLIC_APP_URL}/order-tracking/${order.id}\n\n` +
       `Expect delivery in 3-5 business days.\n\n` +
       `For support: 📞 6202058021\n` +
@@ -128,7 +141,7 @@ async function sendOrderConfirmation(order: any) {
 
     console.log("WhatsApp Order Confirmation:", whatsappMessage);
     
-    // Email notification (in production, use a service like SendGrid, Nodemailer, etc.)
+    // Email notification
     const emailSubject = `Order Confirmed - ${order.orderNumber} | Kosimila`;
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -149,7 +162,8 @@ async function sendOrderConfirmation(order: any) {
           <h3 style="color: #333; margin-bottom: 15px;">Shipping Address</h3>
           <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
             <p style="margin: 5px 0;"><strong>${order.shippingAddress.name}</strong></p>
-            <p style="margin: 5px 0;">${order.shippingAddress.address}</p>
+            <p style="margin: 5px 0;">${order.shippingAddress.addressLine1}</p>
+            ${order.shippingAddress.addressLine2 ? `<p style="margin: 5px 0;">${order.shippingAddress.addressLine2}</p>` : ''}
             <p style="margin: 5px 0;">${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}</p>
             <p style="margin: 5px 0;">📞 ${order.shippingAddress.phone}</p>
           </div>

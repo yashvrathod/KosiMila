@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"require\\(''''typescript''''\\).createProgram\\([''''app/products/ProductsClient.tsx''''], {jsx: 1, skipLibCheck: true, noEmit: true}\\).emit\\(\\)\")"
+    ]
+  }
+}
