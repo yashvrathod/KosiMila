@@ -101,14 +101,21 @@ export default function StoreHeader({
       <div className="bg-neutral-900 text-white overflow-hidden border-b border-white/5">
         <div className="whitespace-nowrap flex animate-marquee py-2.5 text-[10px] font-bold uppercase tracking-[0.2em]">
           {[
-            "✨ Exclusive Ram Navami Sale: Extra 10% Off",
-            "🌿 Farm-to-Table Luxury Makhana",
-            "🚚 Complimentary Delivery on Orders Above ₹499",
-            "💎 Premium Hand-Picked Quality",
-            "✨ Exclusive Ram Navami Sale: Extra 10% Off",
-            "🌿 Farm-to-Table Luxury Makhana",
-            "🚚 Complimentary Delivery on Orders Above ₹499",
-            "💎 Premium Hand-Picked Quality",
+            "✨ Taste the Purity of Nature in Every Bite",
+"🌿 Naturally Sourced, Carefully Crafted",
+"🚀 Elevate Your Snacking Experience",
+"💎 Quality You Can Trust, Flavor You’ll Love",
+"🥇 Premium Makhana, Perfected for You",
+"🌱 Healthy Snacking Starts Here",
+"🔥 Crunch That Keeps You Coming Back",
+"🍃 Straight from Farms to Your Home",
+"🎯 Guilt-Free Indulgence Anytime",
+"👑 Royal Taste, Everyday Luxury",
+"⚡ Power-Packed Nutrition in Every Bite",
+"🌟 Because You Deserve Better Snacks",
+"🛍️ Crafted for Conscious Snacking",
+"💚 Pure, Fresh & Delicious Always",
+"🍽️ Snack Smart, Live Better"
           ].map((text, i) => (
             <span key={i} className="mx-12">{text}</span>
           ))}
